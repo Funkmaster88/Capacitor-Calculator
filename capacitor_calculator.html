@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacitor Inspector</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0f1318;
+    --panel:     #181d24;
+    --panel2:    #1e242d;
+    --border:    #2a3240;
+    --accent1:   #f5a623;
+    --accent2:   #4a9eff;
+    --purple:    #a78bfa;
+    --pass:      #22c55e;
+    --fail-low:  #ef4444;
+    --fail-high: #f97316;
+    --text:      #e8edf5;
+    --muted:     #8a95a3;
+    --input-bg:  #252c38;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #0a0e14 0%, #141b26 100%);
+    border-bottom: 2px solid var(--accent1);
+    padding: 18px 24px 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+  }
+  .header-icon {
+    font-size: 36px;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px rgba(245,166,35,0.5));
+  }
+  .header-text h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1;
+  }
+  .header-text p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+  .formula-badge {
+    margin-left: auto;
+    background: rgba(74,158,255,0.12);
+    border: 1px solid rgba(74,158,255,0.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+
+  /* ── Cap columns ── */
+  .caps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .cap-card {
+    background: var(--panel);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .cap-card-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cap-card.cap1 .cap-card-header { background: linear-gradient(90deg, #1a2a45, #1e2d4a); border-bottom: 2px solid var(--accent2); }
+  .cap-card.cap2 .cap-card-header { background: linear-gradient(90deg, #1e1a35, #231e40); border-bottom: 2px solid var(--purple); }
+
+  .cap-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .cap-card.cap1 .cap-label { color: var(--accent2); }
+  .cap-card.cap2 .cap-label { color: var(--purple); }
+
+  .cap-sublabel {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .cap-body { padding: 16px; }
+
+  /* ── Input rows ── */
+  .input-row {
+    margin-bottom: 14px;
+  }
+  .input-row:last-child { margin-bottom: 0; }
+
+  .input-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .input-hint {
+    display: block;
+    font-family: 'Barlow', sans-serif;
+    font-size: 11px;
+    color: #5a6475;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within {
+    border-color: var(--accent1);
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+  }
+
+  .input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 10px 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--accent1);
+    width: 100%;
+  }
+  .input-wrap input::placeholder { color: #3a4455; }
+
+  .input-unit {
+    padding: 0 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    border-left: 1px solid var(--border);
+    height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── How-to section ── */
+  .howto-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .howto-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .howto-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .howto-item {
+    background: var(--panel2);
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid var(--accent1);
+  }
+  .howto-item h4 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--accent1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .howto-item p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .result-card {
+    background: var(--panel);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .result-card-header {
+    padding: 10px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .result-card.cap1 .result-card-header { background: rgba(74,158,255,0.1); color: var(--accent2); border-bottom: 1px solid rgba(74,158,255,0.2); }
+  .result-card.cap2 .result-card-header { background: rgba(167,139,250,0.1); color: var(--purple); border-bottom: 1px solid rgba(167,139,250,0.2); }
+
+  .result-body { padding: 14px 16px; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-row:last-child { border-bottom: none; }
+
+  .result-row-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .result-row-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+  }
+  .result-row-value.actual { font-size: 24px; }
+  .result-row-value.low { color: var(--fail-low); }
+  .result-row-value.high { color: var(--fail-high); }
+  .result-row-value.deviation { font-size: 18px; }
+
+  /* ── Verdict ── */
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .verdict-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    min-height: 80px;
+  }
+  .verdict-card.empty {
+    background: var(--panel);
+    border-color: var(--border);
+  }
+  .verdict-card.pass {
+    background: rgba(34,197,94,0.1);
+    border-color: var(--pass);
+    box-shadow: 0 0 20px rgba(34,197,94,0.15);
+  }
+  .verdict-card.fail-low {
+    background: rgba(239,68,68,0.1);
+    border-color: var(--fail-low);
+    box-shadow: 0 0 20px rgba(239,68,68,0.2);
+    animation: pulse-red 2s infinite;
+  }
+  .verdict-card.fail-high {
+    background: rgba(249,115,22,0.1);
+    border-color: var(--fail-high);
+    box-shadow: 0 0 20px rgba(249,115,22,0.15);
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 20px rgba(239,68,68,0.2); }
+    50%       { box-shadow: 0 0 35px rgba(239,68,68,0.45); }
+  }
+
+  .verdict-icon { font-size: 32px; line-height: 1; flex-shrink: 0; }
+
+  .verdict-text { flex: 1; }
+  .verdict-status {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .verdict-card.empty  .verdict-status { color: var(--muted); font-size: 14px; font-weight: 600; }
+  .verdict-card.pass   .verdict-status { color: var(--pass); }
+  .verdict-card.fail-low  .verdict-status { color: var(--fail-low); }
+  .verdict-card.fail-high .verdict-status { color: var(--fail-high); }
+
+  .verdict-detail {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* ── Low warning banner ── */
+  .warning-banner {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-left: 4px solid var(--fail-low);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #f87171;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .warning-banner .warn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Clear button ── */
+  .clear-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #7f1d1d, #991b1b);
+    border: 1.5px solid #ef4444;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+  }
+  .clear-btn:hover {
+    background: linear-gradient(135deg, #991b1b, #b91c1c);
+    box-shadow: 0 0 20px rgba(239,68,68,0.3);
+    transform: translateY(-1px);
+  }
+  .clear-btn:active { transform: translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    header { flex-wrap: wrap; }
+    .formula-badge { margin-left: 0; }
+    .caps-grid, .results-grid, .verdict-grid { grid-template-columns: 1fr; }
+    .howto-grid { grid-template-columns: 1fr; }
+    .header-text h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">⚡</div>
+  <div class="header-text">
+    <h1>Capacitor Inspector</h1>
+    <p>HVAC Field Tool  ·  10% Tolerance  ·  Run Capacitor Testing</p>
+  </div>
+  <div class="formula-badge">Amps × 2652 ÷ Voltage = µF</div>
+</header>
+
+<main>
+
+  <!-- How-to -->
+  <div class="howto-section">
+    <div class="howto-title">📋 How to Measure</div>
+    <div class="howto-grid">
+      <div class="howto-item">
+        <h4>⚡ Amps</h4>
+        <p>Set clamp meter to AC Amps. Clamp around one capacitor lead wire while the unit is running.</p>
+      </div>
+      <div class="howto-item">
+        <h4>🔌 Voltage</h4>
+        <p>Set multimeter to AC Volts. Touch probes to both capacitor terminals while the unit is running.</p>
+      </div>
+      <div class="howto-item">
+        <h4>🏷️ Rated µF</h4>
+        <p>Read the µF or MFD value printed on the capacitor label. This is your target rated value.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input cards -->
+  <div class="caps-grid">
+
+    <!-- Cap 1 -->
+    <div class="cap-card cap1">
+      <div class="cap-card-header">
+        <div>
+          <div class="cap-label">Capacitor 1</div>
+          <div class="cap-sublabel">Single or dual run — first section</div>
+        </div>
+      </div>
+      <div class="cap-body">
+        <div class="input-row">
+          <label class="input-label">
+            Amps
+            <span class="input-hint">Clamp meter on lead wire</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c1-amps" placeholder="0.00" step="0.01" min="0" oninput="calculate()">
+            <div class="input-unit">A</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <label class="input-label">
+            Voltage
+            <span class="input-hint">Probes on terminals</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c1-volts" placeholder="0.00" step="0.1" min="0" oninput="calculate()">
+            <div class="input-unit">V</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <label class="input-label">
+            Rated µF
+            <span class="input-hint">From capacitor label (MFD/µF)</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c1-rated" placeholder="0.00" step="0.1" min="3" max="100" oninput="calculate()">
+            <div class="input-unit">µF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cap 2 -->
+    <div class="cap-card cap2">
+      <div class="cap-card-header">
+        <div>
+          <div class="cap-label">Capacitor 2</div>
+          <div class="cap-sublabel">Dual run — second section</div>
+        </div>
+      </div>
+      <div class="cap-body">
+        <div class="input-row">
+          <label class="input-label">
+            Amps
+            <span class="input-hint">Clamp meter on lead wire</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c2-amps" placeholder="0.00" step="0.01" min="0" oninput="calculate()">
+            <div class="input-unit">A</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <label class="input-label">
+            Voltage
+            <span class="input-hint">Probes on terminals</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c2-volts" placeholder="0.00" step="0.1" min="0" oninput="calculate()">
+            <div class="input-unit">V</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <label class="input-label">
+            Rated µF
+            <span class="input-hint">From capacitor label (MFD/µF)</span>
+          </label>
+          <div class="input-wrap">
+            <input type="number" id="c2-rated" placeholder="0.00" step="0.1" min="3" max="100" oninput="calculate()">
+            <div class="input-unit">µF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Results -->
+  <div class="results-grid">
+    <div class="result-card cap1">
+      <div class="result-card-header">Cap 1 — Calculated Results</div>
+      <div class="result-body">
+        <div class="result-row">
+          <span class="result-row-label">Actual µF</span>
+          <span class="result-row-value actual" id="c1-actual">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">Allowable Low (−10%)</span>
+          <span class="result-row-value low" id="c1-low">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">Allowable High (+10%)</span>
+          <span class="result-row-value high" id="c1-high">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">% Deviation</span>
+          <span class="result-row-value deviation" id="c1-dev">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="result-card cap2">
+      <div class="result-card-header">Cap 2 — Calculated Results</div>
+      <div class="result-body">
+        <div class="result-row">
+          <span class="result-row-label">Actual µF</span>
+          <span class="result-row-value actual" id="c2-actual">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">Allowable Low (−10%)</span>
+          <span class="result-row-value low" id="c2-low">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">Allowable High (+10%)</span>
+          <span class="result-row-value high" id="c2-high">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-row-label">% Deviation</span>
+          <span class="result-row-value deviation" id="c2-dev">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verdicts -->
+  <div class="verdict-grid">
+    <div class="verdict-card empty" id="c1-verdict-card">
+      <div class="verdict-icon" id="c1-verdict-icon">🔲</div>
+      <div class="verdict-text">
+        <div class="verdict-status" id="c1-verdict-status">Cap 1 — Enter values</div>
+        <div class="verdict-detail" id="c1-verdict-detail">Awaiting measurements</div>
+      </div>
+    </div>
+    <div class="verdict-card empty" id="c2-verdict-card">
+      <div class="verdict-icon" id="c2-verdict-icon">🔲</div>
+      <div class="verdict-text">
+        <div class="verdict-status" id="c2-verdict-status">Cap 2 — Enter values</div>
+        <div class="verdict-detail" id="c2-verdict-detail">Awaiting measurements</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low warning -->
+  <div class="warning-banner">
+    <span class="warn-icon">⚠️</span>
+    <span><strong>LOW failure is critical:</strong> An under-rated capacitor causes the motor to draw excess current, overheat, and risks premature compressor failure. Always flag LOW failures as higher priority than HIGH failures.</span>
+  </div>
+
+  <!-- Clear button -->
+  <button class="clear-btn" onclick="clearAll()">🗑&nbsp;&nbsp;Clear All Inputs</button>
+
+</main>
+
+<script>
+  function val(id) {
+    const v = parseFloat(document.getElementById(id).value);
+    return isNaN(v) || v <= 0 ? null : v;
+  }
+
+  function calcCap(amps, volts, rated) {
+    if (!amps || !volts || !rated) return null;
+    const actual = (amps * 2652) / volts;
+    const low    = rated * 0.9;
+    const high   = rated * 1.1;
+    const dev    = (actual - rated) / rated;
+    let verdict;
+    if (actual < low)       verdict = 'fail-low';
+    else if (actual > high) verdict = 'fail-high';
+    else                    verdict = 'pass';
+    return { actual, low, high, dev, verdict };
+  }
+
+  function setResult(idActual, idLow, idHigh, idDev, idCard, idIcon, idStatus, idDetail, result) {
+    if (!result) {
+      document.getElementById(idActual).textContent = '—';
+      document.getElementById(idLow).textContent    = '—';
+      document.getElementById(idHigh).textContent   = '—';
+      document.getElementById(idDev).textContent    = '—';
+      document.getElementById(idCard).className     = 'verdict-card empty';
+      document.getElementById(idIcon).textContent   = '🔲';
+      document.getElementById(idStatus).textContent = idActual.startsWith('c1') ? 'Cap 1 — Enter values' : 'Cap 2 — Enter values';
+      document.getElementById(idDetail).textContent = 'Awaiting measurements';
+      return;
+    }
+
+    document.getElementById(idActual).textContent = result.actual.toFixed(2) + ' µF';
+    document.getElementById(idLow).textContent    = result.low.toFixed(2) + ' µF';
+    document.getElementById(idHigh).textContent   = result.high.toFixed(2) + ' µF';
+
+    const devPct = (result.dev * 100).toFixed(1);
+    const devEl  = document.getElementById(idDev);
+    devEl.textContent = (result.dev >= 0 ? '+' : '') + devPct + '%';
+    devEl.style.color = result.verdict === 'pass' ? 'var(--pass)' : result.verdict === 'fail-low' ? 'var(--fail-low)' : 'var(--fail-high)';
+
+    const card   = document.getElementById(idCard);
+    const icon   = document.getElementById(idIcon);
+    const status = document.getElementById(idStatus);
+    const detail = document.getElementById(idDetail);
+
+    if (result.verdict === 'pass') {
+      card.className   = 'verdict-card pass';
+      icon.textContent = '✅';
+      status.textContent = 'PASS';
+      detail.textContent = `${result.actual.toFixed(2)} µF is within range (${result.low.toFixed(2)} – ${result.high.toFixed(2)} µF)`;
+    } else if (result.verdict === 'fail-low') {
+      card.className   = 'verdict-card fail-low';
+      icon.textContent = '🚨';
+      status.textContent = 'FAIL — LOW ⚠ Critical';
+      detail.textContent = `${result.actual.toFixed(2)} µF is below minimum ${result.low.toFixed(2)} µF — capacitor is weak/degraded`;
+    } else {
+      card.className   = 'verdict-card fail-high';
+      icon.textContent = '⛔';
+      status.textContent = 'FAIL — HIGH';
+      detail.textContent = `${result.actual.toFixed(2)} µF exceeds maximum ${result.high.toFixed(2)} µF`;
+    }
+  }
+
+  function calculate() {
+    const r1 = calcCap(val('c1-amps'), val('c1-volts'), val('c1-rated'));
+    const r2 = calcCap(val('c2-amps'), val('c2-volts'), val('c2-rated'));
+    setResult('c1-actual','c1-low','c1-high','c1-dev','c1-verdict-card','c1-verdict-icon','c1-verdict-status','c1-verdict-detail', r1);
+    setResult('c2-actual','c2-low','c2-high','c2-dev','c2-verdict-card','c2-verdict-icon','c2-verdict-status','c2-verdict-detail', r2);
+  }
+
+  function clearAll() {
+    ['c1-amps','c1-volts','c1-rated','c2-amps','c2-volts','c2-rated'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    calculate();
+  }
+</script>
+</body>
+</html>
